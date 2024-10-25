@@ -10,7 +10,11 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@coreui/icons": "^3.0.1",
+    "@coreui/icons-vue": "^2.2.0",
+    "@coreui/vue": "^5.0.0-rc.3",
     "axios": "^1.7.7",
+    "jquery": "^3.7.1",
     "pinia": "^2.2.4",
     "vue": "^3.5.12"
   },
