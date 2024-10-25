@@ -30,3 +30,16 @@ L'objectif de ce projet est de créer une interface interactive qui permet :
 ## Objectifs Pédagogiques
 
 Ce projet vise à appliquer de manière pratique les concepts de *Deep Learning*, *Image-Based Processing*, et *NLP*, en utilisant des outils et techniques modernes dans un cadre d'application concret. Ce projet permet également d'acquérir de l'expérience en développement de systèmes d'intelligence artificielle complets, de la manipulation de données multimodales (texte et image) à la construction d'une interface utilisateur performante.
+
+## Commandes pour lancer le projet
+
+### Frontend
+```shell
+npm i
+npm run dev
+```
+
+### Backend
+```shell
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
