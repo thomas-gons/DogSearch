@@ -1,14 +1,20 @@
+# FastAPI et les dépendances web
 fastapi
 uvicorn
+typing-extensions
+python-multipart
 
+# Gestion des images et traitement de base64
+Pillow
+
+# Modèles Transformers et PyTorch
+torch
+transformers
+
+# Faiss
+faiss-cpu
+
+# Python standard library
+Logger
 os
 base64
-pyyaml
-typing
-requests
-logging
-warnings
-
-transformers
-torch
-sentence_transformers
