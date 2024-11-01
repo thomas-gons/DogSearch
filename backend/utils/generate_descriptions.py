@@ -1,8 +1,12 @@
 import os
 import logging
+import warnings
 from PIL import Image
 import torch
 from transformers import BlipProcessor, BlipForConditionalGeneration
+
+# Ignorer les warnings spécifiques
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers.generation.utils")
 
 # Initialisation du logger
 logging.basicConfig(level=logging.INFO)
@@ -43,7 +47,7 @@ def generate_descriptions(image_folder_path):
 
         # Générer la description
         with torch.no_grad():
-            output = model.generate(**inputs)
+            output = model.generate(**inputs, max_new_tokens=50)
         description = processor.decode(output[0], skip_special_tokens=True)
         
         # Afficher et stocker la description

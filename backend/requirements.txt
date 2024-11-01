@@ -7,6 +7,7 @@ pyyaml
 typing
 requests
 logging
+warnings
 
 transformers
 torch
