@@ -1,4 +1,13 @@
 fastapi
 uvicorn
+
+os
+base64
 pyyaml
+typing
 requests
+logging
+
+transformers
+torch
+sentence_transformers
