@@ -6,6 +6,7 @@ backend/__pycache__/
 backend/resources/Images/
 backend/resources/images.tar
 backend/resources/sqlite3.db
+backend/resources/*.json
 
 frontend/node_modules
 frontend/package-lock.json
