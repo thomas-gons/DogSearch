@@ -25,8 +25,8 @@ app.add_middleware(
 )
 
 # Chemin vers le dossier des images et le fichier d'index FAISS
-IMAGES_FOLDER = os.path.join("H:/", "Desktop", "GoldenGate", "Images", "n02085620-Chihuahua")  # Adapter ce chemin si besoin
-INDEX_FILE = "image_embeddings.index"  # Nom du fichier d'index FAISS
+IMAGES_FOLDER = os.path.join("..", "Images")
+INDEX_FILE = "index.faiss"  # Nom du fichier d'index FAISS
 
 # Vérification si l'index existe déjà et chargement ou création
 if os.path.exists(INDEX_FILE):
