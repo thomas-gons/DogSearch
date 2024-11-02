@@ -1,46 +1,64 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
+from typing import *
+import logging
 
-import PIL.Image
-import base64
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Initialiser la base de données et créer une session
-engine = create_engine('sqlite:///resources/images.db')
-Session = sessionmaker(bind=engine)
-session = Session()
-
-# Définir la base de modèle
+# Define the base model
 Base = declarative_base()
 
-# Créer la table 'Images'
+# Define the 'Images' table
 class Image(Base):
     __tablename__ = 'images'
     
     id = Column(Integer, primary_key=True)
-    image_data = Column(Text, nullable=False)  # Champ pour stocker l'image en base64
-    embedding_index = Column(Integer, nullable=False)
+    data = Column(String, nullable=False)
+    embedding_index = Column(Integer, nullable=False, unique=True)
 
-# Créer la table dans la base de données
-Base.metadata.create_all(engine)
+class ORM:
+    def __init__(self) -> None:
+        """Initialize the database and create a session."""
+        # Initialize SQLite database engine
+        engine = create_engine('sqlite:///resources/images.db')
+        
+        # Create all tables if they do not exist
+        Base.metadata.create_all(engine)
+        logger.info("Database and tables initialized.")
 
-# Exemple d'ajout d'une entrée dans la table
-def add_image(base64_image, description):
-    new_image = Image(image_data=base64_image, description=description)
-    session.add(new_image)
-    session.commit()
+        # Set up a session maker bound to the engine
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        logger.info("Session established for database operations.")
 
-def get_image(image_description):
-    image = session.query(Image).filter_by(description=image_description).first()
-    if image:
-        return {"id": image.id, "image_data": image.image_data, "description": image.description}
-    else:
-        return None
+    def add_image(self, base64_image: str, embedding_index: int) -> None:
+        """Add a new image entry to the database."""
+        # Create a new image entry
+        new_image = Image(data=base64_image, embedding_index=embedding_index)
+        
+        # Add and commit the entry to the database
+        try:
+            self.session.add(new_image)
+            self.session.commit()
+            logger.info(f"New image added with embedding index: {embedding_index}")
+        except Exception as e:
+            logger.error(f"Error adding image to database: {e}")
+            self.session.rollback()
 
-# Exemple d'utilisation
-if __name__ == "__main__":
-    # Ajouter une image avec une description
-    with open(r"resources/Images/n02096585-Boston_bull/n02096585_11836.jpg", "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    def get_image_by_index(self, embedding_index: int) -> str:
+        """Retrieve an image by its embedding index."""
+        # Query for the image by embedding index
+        image = self.session.query(Image).filter_by(embedding_index=embedding_index).first()
+        
+        # Return image data if found, otherwise return an empty string
+        if image:
+            logger.info(f"Image retrieved for embedding index: {embedding_index}")
+            return image.data
+        else:
+            logger.warning(f"No image found for embedding index: {embedding_index}")
+            return ""
 
-    add_image(encoded_image, 'boston bull')
-    print(get_image("boston bull"))
+# Initialize the ORM instance for database operations
+orm = ORM()

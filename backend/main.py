@@ -1,26 +1,29 @@
 import os
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
 import base64
 import logging
 import faiss
 from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 from utils.vectorize import generate_and_store_image_embeddings, search_similar_images
-from utils.download_and_extract_images import download_and_prepare_images
+from utils.dataset_handler import DatasetHandler
+from orm import orm
 
+# Configure environment to prevent conflicts with certain libraries
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
-# Initialisation du logger
+# Logger setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Télécharger et préparer les images si nécessaire
-download_and_prepare_images()
-
+# Initialize and configure FastAPI
 app = FastAPI()
 
-# Configuration de CORS
+# Initialize a DatasetHandler instance
+dataset = DatasetHandler()
+
+# Set up CORS to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,66 +32,73 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Chemin vers le dossier des images, le fichier d'index FAISS et le fichier contenant les paths des différentes images
-IMAGES_FOLDER = os.path.join("resources", "images")
-INDEX_FILE = os.path.join("resources", "index.faiss")
-IMAGE_PATH = os.path.join("resources", "image_paths.txt")
+# Paths for image directories and files
+IMAGES_FOLDER = Path("resources") / "images"
+INDEX_FILE = Path("resources") / "index.faiss"
+IMAGE_PATH_FILE = Path("resources") / "image_paths.txt"
 
-# Vérification si l'index existe déjà et chargement ou création
-if os.path.exists(INDEX_FILE):
+# Download and prepare images if needed
+logger.info("Downloading and preparing images if necessary.")
+dataset.download_and_prepare_images()
+
+# Initialize or load FAISS index
+if INDEX_FILE.exists():
+    # Load existing FAISS index
     logger.info(f"Loading FAISS index from {INDEX_FILE}.")
-    index = faiss.read_index(INDEX_FILE)
+    index = faiss.read_index(str(INDEX_FILE))
 
-    # Chargement des chemins d'image à partir d'un fichier
-    if os.path.exists(IMAGE_PATH):
-        with open(IMAGE_PATH, "r") as f:
+    # Load image paths from text file
+    if IMAGE_PATH_FILE.exists():
+        with open(IMAGE_PATH_FILE, "r") as f:
             image_paths = [line.strip() for line in f.readlines()]
     else:
         logger.error("Image paths file not found.")
         raise HTTPException(status_code=500, detail="Image paths file not found.")
-
 else:
+    # Generate and store FAISS index if it does not exist
     logger.info("Generating and storing image embeddings in FAISS.")
     index, image_paths = generate_and_store_image_embeddings(IMAGES_FOLDER)
 
-    # Sauvegarde de l'index
-    faiss.write_index(index, INDEX_FILE)
+    # Save FAISS index to disk
+    faiss.write_index(index, str(INDEX_FILE))
     logger.info("Image embeddings generated and stored successfully.")
 
-    # Sauvegarde des chemins d'image dans un fichier
-    with open(IMAGE_PATH, "w") as f:
+    # Save image paths to a text file
+    with open(IMAGE_PATH_FILE, "w") as f:
         for path in image_paths:
             f.write(f"{path}\n")
     logger.info("Image paths saved to 'image_paths.txt'.")
 
-# Endpoint pour obtenir les images en fonction de la similarité avec la requête
+# Define an endpoint for searching similar images
 @app.get("/api/findImagesForQuery/{query}", response_model=List[str])
 def find_images_for_query(query: str):
-    logger.info(f"Received query: {query}")
+    """Endpoint to search and return images most similar to a given query."""
+    
+    logger.info(f"Received query for similar image search: {query}")
 
-    # Vérifier si le dossier existe
-    if not os.path.isdir(IMAGES_FOLDER):
-        logger.error(f"Image directory not found at path: {IMAGES_FOLDER}")
+    # Check if the images directory exists
+    if not IMAGES_FOLDER.exists():
+        logger.error(f"Image directory not found: {IMAGES_FOLDER}")
         raise HTTPException(status_code=404, detail="Image directory not found.")
     
-    # Utiliser FAISS pour trouver les images les plus similaires à la requête
+    # Use FAISS to find the most similar images for the query
     top_k_images = search_similar_images(query, index, image_paths, top_k=4)
 
-    # Vérification si des images ont été trouvées
+    # Check if similar images were found
     if not top_k_images:
-        logger.warning("No similar images found for the query.")
+        logger.warning("No similar images found for this query.")
         raise HTTPException(status_code=404, detail="No similar images found.")
 
-    logger.info(f"Top 4 images found for the query: {top_k_images}")
+    logger.info(f"Top 4 similar images found for the query: {top_k_images}")
 
-    # Conversion des images sélectionnées en base64
+    # Encode selected images in base64
     base64_images = []
     for image_path, _ in top_k_images:
-        with open(image_path, "rb") as image_file:
-            # Encoder l'image en base64
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-            base64_images.append(f"data:image/jpeg;base64,{encoded_string}")
-        logger.debug(f"Encoded image: {image_path}")
+        # Use ORM to retrieve the image from the FAISS index, using the appropriate index
+        image_data = orm.get_image_by_index() # TODO
+        encoded_string = base64.b64encode(image_data['image_data']).decode('utf-8')
+        base64_images.append(f"data:image/jpeg;base64,{encoded_string}")
+        logger.debug(f"Encoded image in base64: {image_path}")
 
-    logger.info("Returning selected images as base64.")
+    logger.info("Selected images returned in base64.")
     return base64_images
