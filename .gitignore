@@ -1,5 +1,7 @@
 .idea/
 __pycache__/
+
 backend/__pycache__/
-Images/
-.venv/
+backend/resources/Images/
+backend/.venv/
+backend/resources/image.db/

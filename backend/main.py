@@ -3,15 +3,20 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
 import base64
 import logging
+import faiss
+from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 from utils.vectorize import generate_and_store_image_embeddings, search_similar_images
-import faiss  # Assurez-vous d'importer FAISS
+from utils.download_and_extract_images import download_and_prepare_images
+
 
 # Initialisation du logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Télécharger et préparer les images si nécessaire
+download_and_prepare_images()
 
 app = FastAPI()
 
@@ -24,9 +29,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Chemin vers le dossier des images et le fichier d'index FAISS
-IMAGES_FOLDER = os.path.join("..", "Images")
-INDEX_FILE = "index.faiss"  # Nom du fichier d'index FAISS
+# Chemin vers le dossier des images, le fichier d'index FAISS et le fichier contenant les paths des différentes images
+IMAGES_FOLDER = os.path.join("resources", "images")
+INDEX_FILE = os.path.join("resources", "index.faiss")
+IMAGE_PATH = os.path.join("resources", "image_paths.txt")
 
 # Vérification si l'index existe déjà et chargement ou création
 if os.path.exists(INDEX_FILE):
@@ -34,8 +40,8 @@ if os.path.exists(INDEX_FILE):
     index = faiss.read_index(INDEX_FILE)
 
     # Chargement des chemins d'image à partir d'un fichier
-    if os.path.exists("image_paths.txt"):
-        with open("image_paths.txt", "r") as f:
+    if os.path.exists(IMAGE_PATH):
+        with open(IMAGE_PATH, "r") as f:
             image_paths = [line.strip() for line in f.readlines()]
     else:
         logger.error("Image paths file not found.")
@@ -50,7 +56,7 @@ else:
     logger.info("Image embeddings generated and stored successfully.")
 
     # Sauvegarde des chemins d'image dans un fichier
-    with open("image_paths.txt", "w") as f:
+    with open(IMAGE_PATH, "w") as f:
         for path in image_paths:
             f.write(f"{path}\n")
     logger.info("Image paths saved to 'image_paths.txt'.")
