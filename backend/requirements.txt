@@ -9,3 +9,7 @@ transformers
 faiss-cpu
 tqdm
 sqlalchemy
+
+aiohttp
+lxml
+bs4
