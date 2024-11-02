@@ -1,5 +1,11 @@
-dataset_image_url: 'http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar'
-dataset_annotation_url: 'http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar'
+dataset_name: "ImageNetDogs"
+dataset_image_url: "http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar"
+dataset_annotation_url: "http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar"
 
-dataset_path: 'resources/'
+dataset_path: 'resources/Images'
+dataset_archive_path: 'resources/images.tar'
 image_paths: 'resources/image_paths.txt'
+
+database_uri: 'sqlite:///resources/sqlite3.db'
+
+faiss_index_path: 'resources/index.faiss'

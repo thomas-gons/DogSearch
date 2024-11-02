@@ -6,13 +6,14 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+
 from utils.vectorize import generate_and_store_image_embeddings, search_similar_images
 from utils.dataset_handler import DatasetHandler
 from orm import orm
+from utils.config import config
 
 # Configure environment to prevent conflicts with certain libraries
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
 # Logger setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,8 +34,7 @@ app.add_middleware(
 )
 
 # Paths for image directories and files
-IMAGES_FOLDER = Path("resources") / "images"
-INDEX_FILE = Path("resources") / "index.faiss"
+INDEX_FILE = Path(config['faiss_index_path'])
 IMAGE_PATH_FILE = Path("resources") / "image_paths.txt"
 
 # Download and prepare images if needed
@@ -57,7 +57,7 @@ if INDEX_FILE.exists():
 else:
     # Generate and store FAISS index if it does not exist
     logger.info("Generating and storing image embeddings in FAISS.")
-    index, image_paths = generate_and_store_image_embeddings(IMAGES_FOLDER)
+    index, image_paths = generate_and_store_image_embeddings(config['dataset_path'])
 
     # Save FAISS index to disk
     faiss.write_index(index, str(INDEX_FILE))
@@ -76,29 +76,24 @@ def find_images_for_query(query: str):
     
     logger.info(f"Received query for similar image search: {query}")
 
-    # Check if the images directory exists
-    if not IMAGES_FOLDER.exists():
-        logger.error(f"Image directory not found: {IMAGES_FOLDER}")
-        raise HTTPException(status_code=404, detail="Image directory not found.")
-    
     # Use FAISS to find the most similar images for the query
-    top_k_images = search_similar_images(query, index, image_paths, top_k=4)
+    distances, top_k_indices = search_similar_images(query, index, image_paths, top_k=4)
 
     # Check if similar images were found
-    if not top_k_images:
+    if top_k_indices.size == 0:
         logger.warning("No similar images found for this query.")
         raise HTTPException(status_code=404, detail="No similar images found.")
 
-    logger.info(f"Top 4 similar images found for the query: {top_k_images}")
 
-    # Encode selected images in base64
     base64_images = []
-    for image_path, _ in top_k_images:
+    top_k_images = []
+    for i, indice in enumerate(top_k_indices):
         # Use ORM to retrieve the image from the FAISS index, using the appropriate index
-        image_data = orm.get_image_by_index() # TODO
-        encoded_string = base64.b64encode(image_data['image_data']).decode('utf-8')
-        base64_images.append(f"data:image/jpeg;base64,{encoded_string}")
-        logger.debug(f"Encoded image in base64: {image_path}")
+        base64_image = orm.get_image_by_index(indice)
+        base64_images.append(base64_image["data"])
+        top_k_images.append([base64_image["filename"], distances[i]])
+
+    logger.info(f"Top 4 similar images found for the query: {top_k_images}")
 
     logger.info("Selected images returned in base64.")
     return base64_images

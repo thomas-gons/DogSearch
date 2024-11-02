@@ -1,7 +1,11 @@
 .idea/
 __pycache__/
 
+backend/.venv/
 backend/__pycache__/
 backend/resources/Images/
-backend/.venv/
-backend/resources/image.db/
+backend/resources/images.tar
+backend/resources/sqlite3.db
+
+frontend/node_modules
+frontend/package-lock.json

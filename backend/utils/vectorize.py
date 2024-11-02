@@ -107,20 +107,4 @@ def search_similar_images(query: str, index, image_paths: list, top_k: int = 5):
     logger.info("Searching for top %d similar images.", top_k)
     distances, indices = index.search(query_embedding.cpu().numpy(), top_k)
     
-    # Validate the indices
-    if len(image_paths) == 0:
-        logger.warning("No images found or index is empty.")
-        return []
-    
-    similar_images = []
-    for idx, dist in zip(indices[0], distances[0]):
-        if idx < len(image_paths):  # Validate the index
-            similar_images.append((image_paths[idx], dist))
-        else:
-            logger.warning("Index %d out of range for image_paths of length %d", idx, len(image_paths))
-    
-    logger.info("Top %d similar images found for the query: %s", len(similar_images), query)
-    for i, (path, dist) in enumerate(similar_images, 1):
-        logger.info("Result %d: Image path: %s, Distance: %f", i, path, dist)
-    
-    return similar_images
+    return distances.reshape(-1), indices.reshape(-1)
