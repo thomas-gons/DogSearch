@@ -18,7 +18,7 @@ class Image(Base):
     
     id = Column(Integer, primary_key=True)
     image_data = Column(Text, nullable=False)  # Champ pour stocker l'image en base64
-    description = Column(String(255))  # Champ pour une chaîne de caractères descriptive
+    embedding_index = Column(Integer, nullable=False)
 
 # Créer la table dans la base de données
 Base.metadata.create_all(engine)
