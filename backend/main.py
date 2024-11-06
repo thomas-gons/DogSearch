@@ -105,12 +105,12 @@ from PIL import Image
 
 @app.post("/api/uploadImages")
 async def upload_images(files: List[UploadFile] = File(...)):
+
+    images = []
     for file in files:
         img_bytes = await file.read()
         base64_img = f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
 
         img = Image.open(BytesIO(img_bytes))
 
-        plt.imshow(img)
-        plt.show()
         pass

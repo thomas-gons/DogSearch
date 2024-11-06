@@ -11,6 +11,7 @@
       <button @click="uploadImage">Upload</button>
       <input
         type="file"
+        accept="image/*"
         ref="upload-input"
         multiple
         style="display: none"

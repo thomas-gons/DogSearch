@@ -6,9 +6,11 @@ from tqdm import tqdm
 from pathlib import Path
 
 from .config import config
+from misc import (singleton)
 from orm import orm
 
 
+@singleton
 class DatasetHandler:
     def __init__(self) -> None:
         self.dataset_path = Path(config['dataset_path'])
