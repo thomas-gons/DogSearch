@@ -3,7 +3,7 @@
     <h1>DogSearch</h1>
   </header>
 </template>
-  
+
 <style scoped>
 
   .header {
@@ -16,4 +16,3 @@
     font-weight: bold;
   }
 </style>
-  

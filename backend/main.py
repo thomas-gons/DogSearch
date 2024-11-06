@@ -97,3 +97,20 @@ def find_images_for_query(query: str):
 
     logger.info("Selected images returned in base64.")
     return base64_images
+
+from fastapi import FastAPI, File, UploadFile
+from io import BytesIO
+import matplotlib.pyplot as plt
+from PIL import Image
+
+@app.post("/api/uploadImages")
+async def upload_images(files: List[UploadFile] = File(...)):
+    for file in files:
+        img_bytes = await file.read()
+        base64_img = f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+
+        img = Image.open(BytesIO(img_bytes))
+
+        plt.imshow(img)
+        plt.show()
+        pass

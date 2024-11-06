@@ -11,7 +11,42 @@ import Header from './components/Header.vue';
 import SearchBar from './components/SearchBar.vue';
 import ImageGallery from './components/ImageGallery.vue';
 
+import { useUploadQueueStore } from '@/stores/uploadQueue'
+import axios from "axios";
+
 export default {
+  setup() {
+    const uploadQueueStore = useUploadQueueStore()
+
+    uploadQueueStore.$onAction((context) => {
+      if (context.name === 'fillQueue') {
+
+        context.after(() => {
+          const containerToProcess = uploadQueueStore.$state.containersToProcess.pop()
+
+          containerToProcess.batches.forEach(batch => {
+
+            const formData = new FormData()
+            batch.files.forEach(file => {
+              formData.append("files", file)
+            })
+
+            axios.post("http://localhost:8000/api/uploadImages", formData)
+              .then((response) => {
+                console.log(response)
+              })
+              .catch(error => {
+                console.log(error)
+              })
+          })
+        })
+      }
+    })
+
+    return {
+      uploadQueueStore,
+    };
+  },
   components: {
     Header,
     SearchBar,
@@ -32,9 +67,9 @@ export default {
         this.searchBarHeight = this.isGalleryVisible ? '10vh' : '80vh';
         return;
       }
-      
+
       const response = await fetch(`http://localhost:8000/api/findImagesForQuery/${query}`);
-      
+
       if (!response.ok) {
         console.error("Erreur lors de la récupération des images.");
         this.isGalleryVisible = false;
@@ -47,7 +82,7 @@ export default {
       this.images = data;
       this.isGalleryVisible = this.images.length > 0;
       this.searchBarHeight = this.isGalleryVisible ? '10vh' : '80vh';
-    }
+    },
   }
 };
 </script>
@@ -56,7 +91,7 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&display=swap');
 :root {
   --background-color: #f4f4f4;
-  
+
   --primary-color: #3b79eb;
   --primary-color-dark: #2c6be0;
   --secondary-color: #f1f5fa;
