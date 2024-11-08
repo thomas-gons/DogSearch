@@ -5,6 +5,16 @@ from PIL import Image
 import numpy as np
 
 def singleton(cls):
+    """
+    A decorator that ensures a class has only one instance. If an instance already exists,
+    it returns that instance instead of creating a new one.
+
+    Args:
+        cls (type): The class to be instantiated as a singleton.
+
+    Returns:
+        object: The single instance of the specified class.
+    """
     instances = {}
 
     def get_instance(*args, **kwargs):
@@ -14,13 +24,27 @@ def singleton(cls):
 
     return get_instance
 
-def image_to_based64(img):
+def image_to_based64(img) -> str:
+    """
+    Converts an image to a base64-encoded string suitable for embedding in HTML or other text-based formats.
+
+    Args:
+        img (_io.BufferedReader, bytes, or np.ndarray): The image to convert. 
+            - Can be a file-like object, bytes, or a numpy array.
+            - Numpy array images are converted to JPEG format.
+
+    Returns:
+        str: A base64-encoded string representing the image in JPEG format.
+    
+    Raises:
+        ValueError: If the input type is not supported.
+    """
     if isinstance(img, _io.BufferedReader):
         img_bytes = img.read()
     elif isinstance(img, bytes):
         img_bytes = img
     elif isinstance(img, np.ndarray):
-        # If img is a numpy array, convert it to an image first
+        # Convert numpy array to a PIL image and then to bytes
         img_pil = Image.fromarray(img)
         img_byte_io = BytesIO()
         img_pil.save(img_byte_io, format='JPEG')  # Save the numpy array as a JPEG image in memory
