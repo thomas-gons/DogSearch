@@ -1,19 +1,23 @@
-import faiss
-import numpy as np
 from pathlib import Path
 
-from config import config
-from misc import (singleton)
+import faiss
+import numpy as np
+
+from backend import config, logger
+from backend.utils.misc import (singleton)
 
 
 @singleton
 class FaissHelper:
+
     def __init__(self, embedding_dim):
         self.embedding_dim = embedding_dim
         self.index_path = config['faiss_index_path']
+        readonly_faiss_index_path = config['readonly_faiss_index_path']
         if Path(self.index_path).exists():
             self.index = faiss.read_index(self.index_path)
-            self.do_backup()
+        elif Path(readonly_faiss_index_path).exists():
+            self.index = faiss.read_index(readonly_faiss_index_path)
         else:
             self.index = faiss.IndexFlatL2(self.embedding_dim)
 
@@ -32,15 +36,21 @@ class FaissHelper:
         embeddings = self.__check_embeddings(embeddings)
         self.index.add(embeddings)
 
-    def search(self, query_embedding, k=5):
+    def search(self, query_embedding: np.array, k: int = 5) -> (np.array, np.array):
         query_embedding = self.__check_embeddings(query_embedding)
         distances, indices = self.index.search(query_embedding, k)
 
         return distances.reshape(-1), indices.reshape(-1)
 
-    def save(self):
+    def get_last_index(self):
+        return self.index.ntotal
+
+    def save(self) -> None:
         faiss.write_index(self.index, self.index_path)
+        logger.info("Faiss index saved")
 
+    def purge_user_data(self, indexes):
+        if indexes:
+            embedding_indexes_array = np.array(indexes, dtype=np.int64)
+            self.index.remove_ids(faiss.IDSelectorArray(embedding_indexes_array))
 
-    def do_backup(self):
-        faiss.write_index(self.index, f"{self.index_path}.bak")

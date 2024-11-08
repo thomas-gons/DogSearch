@@ -1,8 +1,9 @@
 <template>
   <div id="app">
-    <Header />
-    <SearchBar @search="fetchImages" :searchBarHeight="searchBarHeight" />
-    <ImageGallery v-if="isGalleryVisible" :images="images" />
+    <Header/>
+    <SearchBar @search="fetchImages" :searchBarHeight="searchBarHeight"/>
+    <ImageGallery v-if="isGalleryVisible" :images="images"/>
+    <UploadSnackBar/>
   </div>
 </template>
 
@@ -11,8 +12,9 @@ import Header from './components/Header.vue';
 import SearchBar from './components/SearchBar.vue';
 import ImageGallery from './components/ImageGallery.vue';
 
-import { useUploadQueueStore } from '@/stores/uploadQueue'
+import {useUploadQueueStore} from '@/stores/uploadQueue'
 import axios from "axios";
+import UploadSnackBar from "@/components/UploadSnackBar.vue";
 
 export default {
   setup() {
@@ -22,8 +24,10 @@ export default {
       if (context.name === 'fillQueue') {
 
         context.after(() => {
-          const containerToProcess = uploadQueueStore.$state.containersToProcess.pop()
+          const containerToProcess = uploadQueueStore.$state.containersToProcess
+            .find(container => container.status === 'waiting');
 
+          containerToProcess.status = 'processing';
           containerToProcess.batches.forEach(batch => {
 
             const formData = new FormData()
@@ -31,12 +35,19 @@ export default {
               formData.append("files", file)
             })
 
+            const batch_size = batch.files.length
+
             axios.post("http://localhost:8000/api/uploadImages", formData)
               .then((response) => {
-                console.log(response)
+                containerToProcess.progress += Number(batch_size / containerToProcess.nImages * 100)
+
+                if (containerToProcess.progress >= 100) {
+                  containerToProcess.status = 'completed';
+                  console.log(`${containerToProcess.id} is completed`)
+                }
               })
               .catch(error => {
-                console.log(error)
+                containerToProcess.status = 'failed';
               })
           })
         })
@@ -48,6 +59,7 @@ export default {
     };
   },
   components: {
+    UploadSnackBar,
     Header,
     SearchBar,
     ImageGallery
@@ -89,6 +101,7 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&display=swap');
+
 :root {
   --background-color: #f4f4f4;
 
@@ -99,6 +112,7 @@ export default {
   --text-color: #393939;
   --placeholder-color: #8d8d8d;
 }
+
 #app {
   font-family: 'IBM Plex Sans', Arial, sans-serif;
   text-align: center;

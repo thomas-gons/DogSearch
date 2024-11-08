@@ -3,10 +3,12 @@ __pycache__/
 
 backend/.venv/
 backend/__pycache__/
+backend/app.log
 backend/resources/Images/
 backend/resources/images.tar
 backend/resources/sqlite3.db
 backend/resources/*.json
+backend/resources/index.faiss
 
 frontend/node_modules
 frontend/package-lock.json

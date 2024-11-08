@@ -1,18 +1,14 @@
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
-from typing import *
-import logging
 
-from utils.config import config
+from backend import config, logger
+from utils.misc import singleton
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Define the base model
 Base = declarative_base()
 
-# Define the 'Images' table
+#------ Define tables here
 class Image(Base):
     __tablename__ = 'images'
     
@@ -20,7 +16,9 @@ class Image(Base):
     filename = Column(String, nullable=False)
     data = Column(String, nullable=False)
     embedding_index = Column(Integer, nullable=False, unique=True)
+    origin = Column(String, nullable=False) # from user or from database
 
+@singleton
 class ORM:
     def __init__(self) -> None:
         """Initialize the database and create a session."""
@@ -32,8 +30,8 @@ class ORM:
         logger.info("Database and tables initialized.")
 
         # Set up a session maker bound to the engine
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
+        session = sessionmaker(bind=engine)
+        self.session = session()
         logger.info("Session established for database operations.")
 
     def add_image(
@@ -41,18 +39,19 @@ class ORM:
             filename: str,
             base64_image: str,
             embedding_index: int,
+            origin: str,
             disable_logger_success=False) -> None:
 
         """Add a new image entry to the database."""
         # Create a new image entry
-        new_image = Image(filename=filename, data=base64_image, embedding_index=embedding_index)
+        new_image = Image(filename=filename, data=base64_image, embedding_index=embedding_index, origin=origin)
         
         # Add and commit the entry to the database
         try:
             self.session.add(new_image)
             self.session.commit()
             if not disable_logger_success:
-                logger.info(f"New image added with embedding index: {embedding_index}")
+                logger.info(f"New image ({filename}) added with embedding index: {embedding_index}")
 
         except Exception as e:
             logger.error(f"Error adding image to database: {e}")
@@ -71,5 +70,13 @@ class ORM:
             logger.warning(f"No image found for embedding index: {embedding_index}")
             return {}
 
-# Initialize the ORM instance for database operations
+    def purge_user_data(self):
+        user_images = self.session.query(Image).filter(Image.origin == 'user').all()
+        embedding_indexes = [image.embedding_index for image in user_images]
+
+        self.session.query(Image).filter(Image.origin == 'user').delete()
+        self.session.commit()
+
+        return embedding_indexes
+
 orm = ORM()

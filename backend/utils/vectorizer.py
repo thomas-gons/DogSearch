@@ -1,18 +1,15 @@
 import os
 import torch
-import logging
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 from typing import List
-import faiss
 import numpy as np
 
-from .config import config
-from misc import (singleton)
+from backend import logger, config
+from backend.orm import ORM
+from backend.utils.faiss_helper import FaissHelper
+from backend.utils.misc import singleton, image_to_based64
 
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 @singleton
 class Vectorizer:
@@ -24,17 +21,11 @@ class Vectorizer:
         self.model = AutoModelForZeroShotImageClassification.from_pretrained(config["clip_model"]).to(self.device)
         logger.info("CLIP processor and model initialized on device: %s", self.device)
 
+    @property
+    def embedding_dim(self):
+        return self.model.config.projection_dim
 
-
-    def __new__(cls):
-        if cls.__instance is None:
-            cls._instance = super(Vectorizer, cls).__new__(cls)
-        return cls.__instance
-
-    def compute_image_embeddings(self, images: List[np.array], **kwargs):
-
-        if isinstance(images, List):
-            images = [images]
+    def compute_image_embeddings(self, images: np.array, **kwargs):
 
         batch_size = kwargs.get('batch_size', 1)
 
@@ -56,6 +47,7 @@ class Vectorizer:
 
     def compute_text_embedding(self, text):
 
+        logger.info("Encoding query text: %s", text)
         inputs = self.processor(text=text, return_tensors="pt").to(self.device)
         with torch.no_grad():
             text_embedding = self.model.get_text_features(**inputs)
@@ -63,7 +55,7 @@ class Vectorizer:
 
         return text_embedding
 
-    def generate_and_store_image_embeddings(self, image_folder_path: str):
+    def generate_and_store_image_embeddings(self, faiss_helper: FaissHelper, image_folder_path: str):
         """
         Generate embeddings for images in the specified folder and store them in a FAISS index.
 
@@ -81,43 +73,34 @@ class Vectorizer:
         for idx, img_path in enumerate(image_paths, 1):
             # Load and preprocess the image
             image = Image.open(img_path).convert("RGB")
-            embedding = self.compute_image_embeddings(image)
+            embedding = self.compute_image_embeddings([image])
 
             # Add the embedding to FAISS
-            self.faiss_index.add(embedding)
+            faiss_helper.add(embedding)
 
             # Log progress
             logger.info("Processed %d/%d images: %s", idx, num_images, img_path)
 
         # Save the FAISS index to a file
-        faiss.write_index(self.faiss_index, self.faiss_index_path)
+        faiss_helper.save()
         logger.info("FAISS index saved to 'image_embeddings.index'.")
 
         logger.info("All embeddings generated and stored in FAISS index.")
         return image_paths
 
+    def generate_and_store_embedding_from_user_image(self, images, faiss_helper: FaissHelper, orm: ORM):
 
-    def search_similar_images(self, query: str, top_k: int = 5):
-        """
-        Search for images most similar to a text query in the FAISS index.
+        batch = []
+        last_faiss_index = faiss_helper.get_last_index()
+        for i, image in enumerate(images):
+            batch.append(np.array(image["data"].resize((224, 224))))
+            orm.add_image(image["filename"], image_to_based64(np.array(image["data"])), last_faiss_index + i, 'user')
 
-        Parameters:
-        - query (str): Text query for searching.
-        - image_paths (list): List of image paths.
-        - top_k (int): Number of most similar results to return.
+        kwargs = {"batch_size": len(batch)}
 
-        Returns:
-        - similar_images (list): List of tuples (image path, distance) for the most similar images.
-        """
-        # Preprocess and encode the text query
-        logger.info("Encoding query text: %s", query)
-        embedding = self.compute_text_embedding(query)[0]
-
-        # Search for top-k similar images in FAISS
-        logger.info("Searching for top %d similar images.", top_k)
-        distances, indices = self.faiss_index.search(embedding, top_k)
-
-        return distances.reshape(-1), indices.reshape(-1)
+        embeddings = self.compute_image_embeddings(np.array(batch), **kwargs)
+        faiss_helper.add(embeddings)
+        logger.info(f"All uploaded images has been added to database and faiss index")
 
 
 def load_image_paths(image_directory: str):

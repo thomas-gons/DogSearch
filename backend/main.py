@@ -1,28 +1,20 @@
-import os
-import base64
-import logging
-import faiss
 from typing import List
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
 
-from utils.vectorize import generate_and_store_image_embeddings, search_similar_images
-from utils.dataset_handler import DatasetHandler
+from backend import logger
+
 from orm import orm
-from utils.config import config
+from utils.faiss_helper import FaissHelper
+from utils.dataset_handler import DatasetHandler
+from utils.vectorizer import Vectorizer
 
-# Configure environment to prevent conflicts with certain libraries
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-# Logger setup
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Initialize and configure FastAPI
 app = FastAPI()
 
-# Initialize a DatasetHandler instance
-dataset = DatasetHandler()
+dataset_handler = DatasetHandler()
 
 # Set up CORS to allow requests from any origin
 app.add_middleware(
@@ -33,61 +25,27 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Paths for image directories and files
-INDEX_FILE = Path(config['faiss_index_path'])
-IMAGE_PATH_FILE = Path("resources") / "image_paths.txt"
-
 # Download and prepare images if needed
 logger.info("Downloading and preparing images if necessary.")
-dataset.download_and_prepare_images()
-
-# Initialize or load FAISS index
-if INDEX_FILE.exists():
-    # Load existing FAISS index
-    logger.info(f"Loading FAISS index from {INDEX_FILE}.")
-    index = faiss.read_index(str(INDEX_FILE))
-
-    # Load image paths from text file
-    if IMAGE_PATH_FILE.exists():
-        with open(IMAGE_PATH_FILE, "r") as f:
-            image_paths = [line.strip() for line in f.readlines()]
-    else:
-        logger.error("Image paths file not found.")
-        raise HTTPException(status_code=500, detail="Image paths file not found.")
-else:
-    # Generate and store FAISS index if it does not exist
-    logger.info("Generating and storing image embeddings in FAISS.")
-    index, image_paths = generate_and_store_image_embeddings(config['dataset_path'])
-
-    # Save FAISS index to disk
-    faiss.write_index(index, str(INDEX_FILE))
-    logger.info("Image embeddings generated and stored successfully.")
-
-    # Save image paths to a text file
-    with open(IMAGE_PATH_FILE, "w") as f:
-        for path in image_paths:
-            f.write(f"{path}\n")
-    logger.info("Image paths saved to 'image_paths.txt'.")
+dataset_handler.download_and_prepare_images()
+vectorizer = Vectorizer()
+faiss_helper = FaissHelper(vectorizer.embedding_dim)
 
 # Define an endpoint for searching similar images
 @app.get("/api/findImagesForQuery/{query}", response_model=List[str])
 def find_images_for_query(query: str):
     """Endpoint to search and return images most similar to a given query."""
-    
-    logger.info(f"Received query for similar image search: {query}")
 
     # Use FAISS to find the most similar images for the query
-    distances, top_k_indices = search_similar_images(query, index, image_paths, top_k=4)
-
-    # Check if similar images were found
-    if top_k_indices.size == 0:
+    embedding = vectorizer.compute_text_embedding(query)
+    distances, indices = faiss_helper.search(embedding, k=4)
+    if indices.size == 0:
         logger.warning("No similar images found for this query.")
         raise HTTPException(status_code=404, detail="No similar images found.")
 
-
     base64_images = []
     top_k_images = []
-    for i, indice in enumerate(top_k_indices):
+    for i, indice in enumerate(indices):
         # Use ORM to retrieve the image from the FAISS index, using the appropriate index
         base64_image = orm.get_image_by_index(indice)
         base64_images.append(base64_image["data"])
@@ -98,19 +56,28 @@ def find_images_for_query(query: str):
     logger.info("Selected images returned in base64.")
     return base64_images
 
-from fastapi import FastAPI, File, UploadFile
+
+from fastapi import File, UploadFile
 from io import BytesIO
-import matplotlib.pyplot as plt
 from PIL import Image
+
 
 @app.post("/api/uploadImages")
 async def upload_images(files: List[UploadFile] = File(...)):
-
     images = []
     for file in files:
         img_bytes = await file.read()
-        base64_img = f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
-
         img = Image.open(BytesIO(img_bytes))
 
-        pass
+        images.append({
+            "filename": file.filename,
+            "data": img
+        })
+
+    vectorizer.generate_and_store_embedding_from_user_image(images, faiss_helper, orm)
+
+
+@app.delete("/api/removeUserImages")
+def remove_user_images():
+    indexes = orm.purge_user_data()
+    faiss_helper.purge_user_data(indexes)

@@ -26,7 +26,7 @@
 import {useUploadQueueStore} from "@/stores/uploadQueue.js";
 
 export default {
-    setup() {
+  setup() {
     const uploadQueueStore = useUploadQueueStore()
 
     const handleFileUpload = async (event) => {
