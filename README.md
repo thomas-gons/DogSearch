@@ -1,45 +1,107 @@
-# Projet de Génération et Recherche d'Images par Similarité
+# DogSearch: Image Generation and Similarity Search
 
-Ce projet est une application pratique qui combine les concepts de *Deep Learning*, *Image-Based Processing*, et *Natural Language Processing (NLP)* dans le cadre d'une solution intégrée, développée par des étudiants en ingénierie spécialisée en Intelligence Artificielle à CY TECH.
+This project is a comprehensive application that integrates **Deep Learning**, **Image-Based Processing**, and **Natural Language Processing (NLP)**, developed by engineering students specializing in Artificial Intelligence at CY TECH.
 
-## Objectifs du Projet
+## Project Goals
 
-L'objectif de ce projet est de créer une interface interactive qui permet :
+The goal of this project is to create an interactive platform that enables the following functionalities:
 
-- **Génération de descriptions d'images** : Utilisation de modèles avancés tels que [CLIP](https://github.com/openai/CLIP) ou [InternVL](https://github.com/microsoft/InternImage) pour produire des descriptions détaillées à partir d'images fournies par l'utilisateur.
-- **Recherche d'images similaires** : Proposition d'images similaires à celle fournie, basées sur des représentations de similarité dans l'espace vectoriel.
-- **Recherche d'images par requête textuelle** : Une fonctionnalité de recherche par texte permettant de trouver des images correspondant à des descriptions textuelles. Cette recherche est optimisée par [Faiss](https://github.com/facebookresearch/faiss), une librairie de Facebook spécialisée dans les recherches de similarité rapides et efficaces.
+- **Image Similarity Search:** Search for images that are most similar to a given input image, based on feature embeddings and similarity search in a vector space.
+- **Text-to-Image Search:** Perform a search for images corresponding to a given textual query, using advanced models to compute the similarity between text and images.
+- **Image Upload and Search:** Allow users to upload their own images, store embeddings, and search for similar images in the database.
+- **Image Description Generation:** Use advanced models such as CLIP to generate descriptions from images provided by the user.
 
-## Technologies Utilisées
+## Technologies Used
 
-- **Modèles de Vision et Langage** : CLIP et InternVL pour la génération de descriptions et la correspondance d'images à partir de descriptions textuelles.
-- **Faiss** : Accélération des recherches de similarité pour une expérience utilisateur rapide.
-- **Interface Utilisateur** : Développement d'une interface intuitive pour faciliter l'utilisation des différentes fonctionnalités proposées.
+- **CLIP Model:** A vision-language model that connects images and text in a shared embedding space. It is used for generating textual descriptions of images and for searching similar images based on text.
+- **Faiss:** A high-performance library for similarity search, used to index and quickly find the most similar images based on embeddings.
+- **FastAPI:** A modern, fast web framework for building APIs in Python, used for backend development.
+- **SQLAlchemy (ORM):** Used for interacting with the SQLite database to store image metadata and embeddings.
+- **Pillow (PIL):** Python Imaging Library used for processing and handling image uploads.
+- **JavaScript (Vue.js):** Used for the frontend interface to interact with the backend API and display results.
 
-## Structure du Projet
-
-1. **Extraction et traitement des caractéristiques d'image** : Les images sont traitées pour extraire des vecteurs de caractéristiques à l'aide de modèles de vision.
-2. **Génération de description textuelle** : À partir des vecteurs extraits, des descriptions sont générées.
-3. **Système de recherche par similarité** : Faiss est utilisé pour accélérer les correspondances entre vecteurs d'images et requêtes textuelles, optimisant ainsi la recherche d'images similaires.
-
-## Membres de l'Équipe
-
-- **Louis-Alexandre LAGUET** - Étudiant en 3ème année de cycle ingénieur, CY TECH - IA
-- **Thomas GONS** - Étudiant en 3ème année de cycle ingénieur, CY TECH - IA
-
-## Objectifs Pédagogiques
-
-Ce projet vise à appliquer de manière pratique les concepts de *Deep Learning*, *Image-Based Processing*, et *NLP*, en utilisant des outils et techniques modernes dans un cadre d'application concret. Ce projet permet également d'acquérir de l'expérience en développement de systèmes d'intelligence artificielle complets, de la manipulation de données multimodales (texte et image) à la construction d'une interface utilisateur performante.
-
-## Commandes pour lancer le projet
-
-### Frontend
-```shell
-npm i
-npm run dev
-```
+## Project Structure
 
 ### Backend
-```shell
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
+
+The backend is built using FastAPI and provides the following features:
+
+- **Image Upload:** Users can upload images, and their embeddings are stored in the database.
+- **Text Search:** The API allows querying for images that match a given textual description.
+- **Image Search:** The API provides endpoints to find similar images based on a given image.
+- **Database Integration:** SQLite is used to store image metadata (filename, embedding, origin).
+- **Faiss Integration:** Used to index image embeddings and efficiently search for similar images.
+
+### Frontend
+
+The frontend is built using Vue.js and provides a user-friendly interface for interacting with the backend.
+
+- **Image Search Interface:** Allows users to input a text query to search for similar images.
+- **Image Upload:** Users can upload images to generate embeddings and store them for future search.
+- **Results Display:** Displays the images most similar to the search query or uploaded image.
+
+## How to Run the Project
+
+### Backend
+
+The backend is built using FastAPI and Uvicorn. To run the backend:
+
+1) **Create** a virtual environment and install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+2) **Run** the FastAPI server:
+    ```bash
+    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+
+The API will be available at http://localhost:8000. The backend includes several endpoints for image search, uploading images, and removing images.
+
+### Frontend
+
+To set up and run the frontend:
+
+1) **Install** dependencies using npm:
+    ```bash
+    npm install
+    ```
+
+2) **Start** the development server:
+    ```bash
+    npm run dev
+    ```
+
+The frontend will be available at http://localhost:8080. It will allow you to interact with the backend by uploading images or entering text queries.
+
+## Endpoints
+
+### `/api/findImagesForQuery/{query}`
+
+- **Method:** GET
+- **Description:** Search for images most similar to a given query (text).
+- **Parameters:**
+    - *query:* The search query (string).
+- **Response:** List of base64-encoded images most similar to the query.
+
+### `/api/uploadImages`
+- **Method:** POST
+- **Description:** Upload images and store them in the database.
+- **Parameters:**
+    - *files:* A list of images to be uploaded.
+- **Response:** Status message or error.
+
+### `/api/removeUserImages`
+
+- **Method:** DELETE
+- **Description:** Remove all images uploaded by the user and their embeddings.
+- **Response:** Success or error message.
+
+## Team Members
+
+- **Thomas GONS** - 3rd-year engineering student, CY TECH - AI
+- **Louis-Alexandre LAGUET** - 3rd-year engineering student, CY TECH - AI
+
+## License
+
+This project is licensed under the MIT License.
