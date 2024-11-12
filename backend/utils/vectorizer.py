@@ -123,7 +123,10 @@ class Vectorizer:
         last_faiss_index = faiss_helper.get_last_index()
         for i, image in enumerate(images):
             resized_image = np.array(image["data"].resize((224, 224)))
-            batch.append(resized_image)
+
+            # the model doesn't handle alpha channel
+            rgb_image = resized_image[:, :, :3]
+            batch.append(rgb_image)
             orm.add_image(image["filename"], image_to_based64(resized_image), last_faiss_index + i, 'user')
 
         kwargs = {"batch_size": len(batch)}

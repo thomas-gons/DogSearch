@@ -30,7 +30,7 @@ app.add_middleware(
 
 # Download and prepare images if necessary
 logger.info("Downloading and preparing images if necessary.")
-dataset_handler.download_and_prepare_images()
+dataset_handler.download_and_prepare_images(orm.is_sample_db_built())
 
 
 @app.get("/api/findImagesForQuery/{query}", response_model=List[str])

@@ -1,8 +1,11 @@
 import {defineStore} from 'pinia'
 
+
 export const useUploadQueueStore = defineStore('uploadQueue', {
+
   state: () => ({
-    containersToProcess: []
+    containersToProcess: [],
+    lastContainerId: 1,
   }),
 
   actions: {
@@ -11,7 +14,7 @@ export const useUploadQueueStore = defineStore('uploadQueue', {
       const batches = []
       const size = 5
 
-      const containerId = crypto.randomUUID(); // Exemple d'ID unique
+      const containerId = this.lastContainerId;
 
       for (let i = 0; i < files.length; i += size) {
         batches.push({
@@ -24,10 +27,13 @@ export const useUploadQueueStore = defineStore('uploadQueue', {
         "batches": batches,
         "nImages": aFiles.length,
         "progress": 0,
-        "status": "waiting"
+        "status": "waiting",
+        "uploadAt": Date.now(),
+        "elapsedTime": "00:00"
       }
 
       this.containersToProcess.push(uploadContainer)
+      this.lastContainerId++
     }
   }
 

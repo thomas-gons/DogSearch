@@ -6,8 +6,8 @@
       placeholder="Rechercher une race de chien..."
       @keyup.enter="search"
     />
-    <div style="display: flex; justify-content: space-between; width: 200px">
-      <button @click="search">Rechercher</button>
+    <div style="display: flex; justify-content: space-between">
+      <button @click="search" id="search-button">Rechercher</button>
       <button @click="uploadImage">Upload</button>
       <input
         type="file"
@@ -66,14 +66,15 @@ export default {
 #search-bar {
   display: flex;
   height: 80px;
+  width: 70vw;
   justify-content: center;
   align-items: center;
-  margin: 1em;
+  margin: 1em auto;
   transition: height 0.5s ease-out;
 }
 
 input[type="text"] {
-  width: 70%;
+  width: 100%;
   padding: 0.625em 0.8em 0.625em;
   font-size: 1.1em;
   font-family: inherit;
@@ -103,4 +104,9 @@ button {
 button:hover {
   background-color: var(--primary-color-dark);
 }
+
+#search-button {
+  margin-right: 0.5em;
+}
+
 </style>

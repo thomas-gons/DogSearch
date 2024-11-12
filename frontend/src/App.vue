@@ -24,35 +24,49 @@ export default {
       if (context.name === 'fillQueue') {
 
         context.after(() => {
-          const containerToProcess = uploadQueueStore.$state.containersToProcess
-            .find(container => container.status === 'waiting');
 
-          containerToProcess.status = 'processing';
-          containerToProcess.batches.forEach(batch => {
+          const isProcessing = uploadQueueStore.$state.containersToProcess
+            .some(container => container.status === 'processing');
 
-            const formData = new FormData()
-            batch.files.forEach(file => {
-              formData.append("files", file)
-            })
-
-            const batch_size = batch.files.length
-
-            axios.post("http://localhost:8000/api/uploadImages", formData)
-              .then((response) => {
-                containerToProcess.progress += Number(batch_size / containerToProcess.nImages * 100)
-
-                if (containerToProcess.progress >= 100) {
-                  containerToProcess.status = 'completed';
-                  console.log(`${containerToProcess.id} is completed`)
-                }
-              })
-              .catch(error => {
-                containerToProcess.status = 'failed';
-              })
-          })
+          if (!isProcessing) {
+            processNextContainer()
+          }
         })
       }
     })
+
+    const processNextContainer = () => {
+
+      const containerToProcess = uploadQueueStore.$state.containersToProcess
+            .find(container => container.status === 'waiting');
+
+      if (!containerToProcess) return;
+      containerToProcess.status = 'processing';
+      containerToProcess.batches.forEach(batch => {
+        const formData = new FormData()
+        batch.files.forEach(file => {
+          formData.append("files", file)
+        })
+
+        const batch_size = batch.files.length
+
+        axios.post("http://localhost:8000/api/uploadImages", formData)
+          .then((response) => {
+            containerToProcess.progress += Number(batch_size / containerToProcess.nImages * 100)
+            if (Math.round(containerToProcess.progress) >= 100) {
+              containerToProcess.progress = 100
+              containerToProcess.status = 'completed';
+              setTimeout(() => {
+                uploadQueueStore.$state.containersToProcess.shift()
+              }, 5000);
+            }
+          })
+          .catch(error => {
+            containerToProcess.status = 'failed';
+          })
+      })
+      processNextContainer()
+    }
 
     return {
       uploadQueueStore,

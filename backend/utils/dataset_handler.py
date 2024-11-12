@@ -58,21 +58,24 @@ class DatasetHandler:
         """
         Reads image paths from the file and saves each image to the database with encoding.
         """
+
+        images_data = []
         with open(self.image_paths_file) as f:
             image_paths = f.readlines()
 
             for index, img_partial_path in enumerate(
-                tqdm(image_paths, total=len(image_paths), desc="Processing Images")
+                tqdm(image_paths, total=len(image_paths), desc="Processing sample images")
             ):
                 img_path = self.dataset_path.parent / img_partial_path.strip()
                 with open(img_path, 'rb') as img:
                     encoded_image = image_to_based64(img)
-                    orm.add_image(
-                        img_path.name, encoded_image, index, "database",
-                        disable_logger_success=True
-                    )
+                    images_data.append((
+                      img_path.name, encoded_image, index, "database"
+                    ))
 
-    def download_and_prepare_images(self):
+        orm.add_images_bulk(images_data)
+
+    def download_and_prepare_images(self, is_sample_db_built):
         """
         Manages the dataset download, extraction, and preparation.
         - Checks if the images are already extracted and skips download if true.
@@ -82,24 +85,24 @@ class DatasetHandler:
         """
         dataset_url = config["dataset_image_url"]
 
-        # Check if images are already extracted
-        if self.dataset_path.exists() and any(self.dataset_path.iterdir()):
-            logger.info(f"Images already extracted in {self.dataset_path}")
+        if self.dataset_path.exists() and any(self.dataset_path.iterdir()) and is_sample_db_built:
+            logger.info(f"Images already extracted in {self.dataset_path} and saved in database.")
             return
 
-        if not self.dataset_archive_path.exists():
+        if not self.dataset_archive_path.exists() and not self.dataset_path.exists():
             # Download the dataset
             logger.info("Downloading the dataset...")
             self.__download_dataset(dataset_url)
 
-        # Extract the archive
-        logger.info("Extracting the tar file...")
-        self.__extract_tarfile()
+            # Extract the archive
+            logger.info("Extracting the tar file...")
+            self.__extract_tarfile()
 
         # Save images to the database
         logger.info("Saving images to the database...")
         self.save_to_db()
 
-        # Remove the archive after extraction
-        self.dataset_archive_path.unlink()  # Use .unlink() to remove a Path object
-        logger.info("Archive deleted after extraction.")
+        if self.dataset_archive_path.exists():
+            # Remove the archive after extraction
+            self.dataset_archive_path.unlink()  # Use .unlink() to remove a Path object
+            logger.info("Archive deleted after extraction.")

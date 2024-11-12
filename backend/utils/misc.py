@@ -47,7 +47,7 @@ def image_to_based64(img) -> str:
         # Convert numpy array to a PIL image and then to bytes
         img_pil = Image.fromarray(img)
         img_byte_io = BytesIO()
-        img_pil.save(img_byte_io, format='JPEG')  # Save the numpy array as a JPEG image in memory
+        img_pil.save(img_byte_io, format=('JPEG' if img.shape[-1] == 3 else 'PNG'))  # Save the numpy array as a JPEG image in memory
         img_byte_io.seek(0)  # Move the pointer back to the start of the byte stream
         img_bytes = img_byte_io.read()  # Get the bytes of the image
     else:
