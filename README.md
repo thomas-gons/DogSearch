@@ -46,14 +46,14 @@ The frontend is built using Vue.js and provides a user-friendly interface for in
 
 The backend is built using FastAPI and Uvicorn. To run the backend:
 
-1) **Create** a virtual environment and install dependencies:
+1) **Create** a virtual environment and install dependencies (inside `backend/` repository):
     ```bash
     pip install -r requirements.txt
     ```
 
-2) **Run** the FastAPI server:
+2) **Run** the FastAPI server (from root project repository):
     ```bash
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    uvicorn backend.main:app --host 0.0.0.0 --port 8000
     ```
 
 The API will be available at http://localhost:8000. The backend includes several endpoints for image search, uploading images, and removing images.
@@ -62,12 +62,12 @@ The API will be available at http://localhost:8000. The backend includes several
 
 To set up and run the frontend:
 
-1) **Install** dependencies using npm:
+1) **Install** dependencies using npm (inside `frontend/` repository):
     ```bash
     npm install
     ```
 
-2) **Start** the development server:
+2) **Start** the development server (inside `frontend/` repository):
     ```bash
     npm run dev
     ```

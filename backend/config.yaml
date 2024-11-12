@@ -2,13 +2,13 @@ dataset_name: "ImageNetDogs"
 dataset_image_url: "http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar"
 dataset_annotation_url: "http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar"
 
-dataset_path: 'resources/Images'
-dataset_archive_path: 'resources/images.tar'
-image_paths: 'resources/image_paths.txt'
+dataset_path: 'backend/resources/Images'
+dataset_archive_path: 'backend/resources/images.tar'
+image_paths: 'backend/resources/image_paths.txt'
 
-database_uri: 'sqlite:///resources/sqlite3.db'
+database_uri: 'sqlite:///backend/resources/sqlite3.db'
 
-faiss_index_path: 'resources/index.faiss'
-readonly_faiss_index_path: 'resources/original_index.faiss'
+faiss_index_path: 'backend/resources/index.faiss'
+readonly_faiss_index_path: 'backend/resources/original_index.faiss'
 
 clip_model: 'zer0int/CLIP-GmP-ViT-L-14'

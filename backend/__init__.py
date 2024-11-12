@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Load configuration from config.yaml
 try:
-    with open("config.yaml", 'r') as stream:
+    with open("backend/config.yaml", 'r') as stream:
         config = yaml.safe_load(stream)
 except yaml.YAMLError as exc:
     logger.error("Error loading configuration: %s", exc)

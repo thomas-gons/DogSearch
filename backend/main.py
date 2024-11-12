@@ -5,10 +5,10 @@ from io import BytesIO
 from PIL import Image
 
 from backend import logger
-from orm import orm
-from utils.faiss_helper import FaissHelper
-from utils.dataset_handler import DatasetHandler
-from utils.vectorizer import Vectorizer
+from backend.orm import orm
+from backend.utils.faiss_helper import FaissHelper
+from backend.utils.dataset_handler import DatasetHandler
+from backend.utils.vectorizer import Vectorizer
 
 
 # Initialize and configure FastAPI

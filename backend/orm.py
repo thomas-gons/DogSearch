@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import exists
 
 from backend import config, logger
-from utils.misc import singleton
+from backend.utils.misc import singleton
 
 # Define the base model for SQLAlchemy
 Base = declarative_base()
