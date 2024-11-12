@@ -1,7 +1,5 @@
 # DogSearch: Image Generation and Similarity Search
 
-This project is a comprehensive application that integrates **Deep Learning**, **Image-Based Processing**, and **Natural Language Processing (NLP)**, developed by engineering students specializing in Artificial Intelligence at CY TECH.
-
 ## Project Goals
 
 The goal of this project is to create an interactive platform that enables the following functionalities:
@@ -9,7 +7,6 @@ The goal of this project is to create an interactive platform that enables the f
 - **Image Similarity Search:** Search for images that are most similar to a given input image, based on feature embeddings and similarity search in a vector space.
 - **Text-to-Image Search:** Perform a search for images corresponding to a given textual query, using advanced models to compute the similarity between text and images.
 - **Image Upload and Search:** Allow users to upload their own images, store embeddings, and search for similar images in the database.
-- **Image Description Generation:** Use advanced models such as CLIP to generate descriptions from images provided by the user.
 
 ## Technologies Used
 
@@ -96,11 +93,6 @@ The frontend will be available at http://localhost:8080. It will allow you to in
 - **Method:** DELETE
 - **Description:** Remove all images uploaded by the user and their embeddings.
 - **Response:** Success or error message.
-
-## Team Members
-
-- **Thomas GONS** - 3rd-year engineering student, CY TECH - AI
-- **Louis-Alexandre LAGUET** - 3rd-year engineering student, CY TECH - AI
 
 ## License
 
